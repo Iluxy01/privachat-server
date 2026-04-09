@@ -13,11 +13,9 @@ const server = http.createServer(app);
 app.use(cors());
 app.use(express.json());
 
-// Роуты
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 
-// Healthcheck для Render
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
@@ -25,11 +23,26 @@ app.get('/health', (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 async function start() {
-  await initDB();
-  setupWebSocket(server);
-  server.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-  });
+  try {
+    console.log("🔄 Starting server...");
+
+    // ⚠️ НЕ ломаем сервер если БД упала
+    try {
+      await initDB();
+      console.log("✅ DB connected");
+    } catch (err) {
+      console.error("❌ DB error:", err.message);
+    }
+
+    setupWebSocket(server);
+
+    server.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+
+  } catch (e) {
+    console.error("💥 Fatal error:", e);
+  }
 }
 
-start().catch(console.error);
+start();
